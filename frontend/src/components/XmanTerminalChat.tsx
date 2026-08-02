@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Terminal, ShieldCheck, ChevronRight, Zap } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Send, Terminal, ShieldCheck } from 'lucide-react';
 import { getTelegramUserId } from '../utils/telegram';
 
 interface Message {
@@ -15,13 +15,13 @@ interface ActionButton {
 }
 
 interface XmanTerminalChatProps {
-  userId: string;
+  _userId: string; // تغییر نام به _userId برای جلوگیری از خطای unused
   initialMessages?: Message[];
   onStageChange?: (stage: number) => void;
 }
 
 export default function XmanTerminalChat({
-  userId,
+  _userId,
   initialMessages = [],
   onStageChange,
 }: XmanTerminalChatProps) {
@@ -32,7 +32,7 @@ export default function XmanTerminalChat({
   const [actionButtons, setActionButtons] = useState<ActionButton[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-const resolvedUserId = getTelegramUserId() ?? getTelegramUserId();
+  const resolvedUserId = getTelegramUserId() ?? getTelegramUserId();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
