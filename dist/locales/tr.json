@@ -1,0 +1,23 @@
+{
+    "welcome": "Hoş geldin! Devam etmek için lütfen şunu çöz: {{question}}",
+    "captcha_wrong": "Bu doğru değil. Kalan deneme: {{remaining}}. Tekrar dene.",
+    "captcha_expired": "Süre doldu! Yeni soru: {{question}}",
+    "captcha_success": "Doğrulandın! Lütfen dilini seç:",
+    "banned": "Çok fazla başarısız deneme nedeniyle geçici olarak engellendin. {{hours}} saat sonra tekrar dene.",
+    "select_language_prompt": "Lütfen dilini seç:",
+    "language_set": "Dil Türkçe olarak ayarlandı. Hazırsın — mesajını gönder!",
+    "ready_prompt": "Doğrulandın. Sana nasıl yardımcı olabilirim?",
+    "rate_limited": "Çok hızlı mesaj gönderiyorsun. Lütfen biraz bekle ve tekrar dene.",
+    "generic_error": "Bir şeyler ters gitti. Lütfen biraz sonra tekrar dene.",
+    "gemini_error": "Bunu şu anda işleyemedim. Lütfen tekrar dene.",
+    "not_verified": "Lütfen önce doğrulamayı tamamlayın.",
+    "learning_step_1_title": "🧠 1. Adım: Blockchain Nedir?",
+    "learning_step_1_body": "Blockchain, birçok bilgisayarın aynı anda senkronize tuttuğu ortak bir dijital kayıt defteridir.\n\nBu önemlidir çünkü bilgilerin herkesin fark etmeden değiştirilmesini zorlaştırır.",
+    "learning_step_1_detail": "Blockchain'i basit ve yeni başlayanlara uygun bir dille açıkla; neden faydalı olduğunu ve normal bir veritabanından nasıl farklı olduğunu vurgula.",
+    "learning_step_footer": "Bir sonraki adımda ne yapmak istersin:",
+    "learning_completed": "🎉 İlk öğrenme aşamasını tamamladın. İstersen tekrar gözden geçirebilir ya da yeniden başlayabilirsin!",
+    "menu_wallet_under_development": "🧾 Cüzdan özellikleri henüz geliştirme aşamasında. Cüzdan güvenliği ve en iyi uygulamalar hakkında öğrenmene yardımcı olabilirim.",
+    "menu_network_status": "⛓️ Ağ detayları henüz hazırlanıyor. Şu an için Base veya Ethereum temelleri hakkında sorabilirsin.",
+    "menu_faucet_info": "🚰 Bu botta faucet erişimi şu anda yok. Lütfen kullandığınız ağ için güvenilir resmi bir faucet kullanın.",
+    "menu_settings": "⚙️ Ayarlar yakında geliyor. İstendiğinde dil seçim butonlarıyla dilini değiştirebilirsin."
+}

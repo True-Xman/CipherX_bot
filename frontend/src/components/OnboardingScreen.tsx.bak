@@ -1,0 +1,171 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Terminal, Shield, ChevronRight, Radio, Lock } from 'lucide-react';
+
+interface OnboardingScreenProps {
+  onComplete?: () => void;
+}
+
+const TOTAL_STEPS = 4;
+
+const STEPS = [
+  {
+    category: "SIGNAL INTERCEPTED",
+    subtitle: "An encrypted transmission has breached your terminal.",
+    dialogue: "Human, you believe you own your digital assets because numbers appear on your screen. This is a pure illusion.",
+    action: "CONTINUE SIGNAL",
+  },
+  {
+    category: "TRUTH PROTOCOL",
+    subtitle: "The Guardian decrypts the next layer of reality.",
+    dialogue: "Those numbers live on servers you do not control. Whoever holds the keys holds the power — and it is not you.",
+    action: "CONTINUE SIGNAL",
+  },
+  {
+    category: "KEY MANIFEST",
+    subtitle: "Ownership is cryptographic, not visual.",
+    dialogue: "True ownership means holding your own private keys. No screen, no bank, no platform — only you and the chain.",
+    action: "CONTINUE SIGNAL",
+  },
+  {
+    category: "TERMINAL READY",
+    subtitle: "Your sovereignty begins now.",
+    dialogue: "Initialize your Security Stack and I will guide you to reclaim true self-custody. Are you ready to see clearly?",
+    action: "INITIALIZE TERMINAL",
+  },
+] as const;
+
+export function CyberpunkOnboarding({ onComplete }: OnboardingScreenProps) {
+  const [step, setStep] = useState(1);
+  const current = STEPS[step - 1];
+
+  const handleAdvance = () => {
+    if (step < TOTAL_STEPS) {
+      setStep((prev) => prev + 1);
+    } else {
+      if (onComplete) onComplete();
+    }
+  };
+
+  return (
+    <main className="relative flex min-h-screen w-full justify-center bg-[#0A0A0C] text-gray-100 font-mono select-none overflow-hidden">
+      {/* Background Grid Accent */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#00ff880a_1px,transparent_1px),linear-gradient(to_bottom,#00ff880a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+
+      {/* Ambient Neon Glow */}
+      <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 rounded-full bg-[#00FF88]/10 blur-3xl" />
+
+      <div className="relative flex min-h-screen w-full max-w-md flex-col justify-between px-5 py-6 z-10">
+        
+        {/* Terminal Header Component */}
+        <header className="flex items-center justify-between border-b border-[#00FF88]/30 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00FF88] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00FF88]" />
+            </span>
+            <span className="text-xs font-bold tracking-widest text-[#00FF88]">
+              XMAN_TERMINAL // v1.0
+            </span>
+          </div>
+          <div className="text-[11px] bg-[#00FF88]/10 text-[#00FF88] border border-[#00FF88]/30 px-2 py-0.5 rounded font-semibold tracking-widest">
+            STEP {step} / {TOTAL_STEPS}
+          </div>
+        </header>
+
+        {/* Center Content Area */}
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 py-6">
+          
+          {/* Guardian Avatar Section */}
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="relative group"
+          >
+            <div className="absolute -inset-1 rounded-full bg-[#00FF88] opacity-25 blur-md group-hover:opacity-50 transition duration-500" />
+            
+            <div className="relative w-32 h-32 rounded-full border-2 border-[#00FF88] p-1 bg-[#0A0A0C] flex items-center justify-center overflow-hidden shadow-[0_0_20px_rgba(0,255,136,0.25)]">
+              <img 
+                src="/xman.png" 
+                alt="Xman Guardian" 
+                className="w-full h-full object-cover rounded-full"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+              <Shield className="w-14 h-14 text-[#00FF88] absolute" />
+            </div>
+
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#0A0A0C] border border-[#00FF88] text-[#00FF88] text-[9px] tracking-widest font-bold px-3 py-0.5 rounded-full shadow-[0_0_10px_rgba(0,255,136,0.3)] flex items-center gap-1">
+              <Radio className="w-3 h-3 animate-pulse" />
+              GUARDIAN
+            </div>
+          </motion.div>
+
+          {/* Animated Signal Card */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+              className="w-full bg-[#121318] border border-[#00FF88]/30 rounded-lg p-5 shadow-2xl relative"
+            >
+              {/* Corner Accents */}
+              <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-[#00FF88]" />
+              <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-[#00FF88]" />
+
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#00FF88]/10 text-[#00FF88] text-[10px] font-bold tracking-wider border border-[#00FF88]/30 mb-3">
+                <Terminal className="w-3 h-3" />
+                {current.category}
+              </div>
+
+              <h2 className="text-xs text-gray-400 uppercase tracking-widest mb-2 font-semibold">
+                {current.subtitle}
+              </h2>
+
+              <p className="text-sm text-gray-200 leading-relaxed font-sans border-l-2 border-[#00FF88] pl-3 py-1">
+                "{current.dialogue}"
+              </p>
+            </motion.div>
+          </AnimatePresence>
+
+        </div>
+
+        {/* Bottom Action Area */}
+        <footer className="flex flex-col gap-4">
+          {/* Progress Indicators */}
+          <div className="flex justify-center gap-1.5">
+            {STEPS.map((_, idx) => (
+              <div 
+                key={idx}
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  idx === step - 1 ? 'w-6 bg-[#00FF88] shadow-[0_0_8px_#00FF88]' : 'w-1.5 bg-gray-800'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Action Button */}
+          <button
+            onClick={handleAdvance}
+            className="w-full py-3.5 px-6 bg-[#00FF88] hover:bg-[#00dd77] text-black font-bold tracking-wider rounded border border-[#00FF88] shadow-[0_0_20px_rgba(0,255,136,0.35)] active:scale-[0.98] transition flex items-center justify-center gap-2"
+          >
+            <span>{current.action}</span>
+            <ChevronRight className="w-5 h-5" />
+          </button>
+
+          <p className="text-center text-[10px] tracking-[0.2em] text-gray-500 flex items-center justify-center gap-1">
+            <Lock className="w-3 h-3 text-[#00FF88]" />
+            SECURE CHANNEL · END-TO-END ENCRYPTED
+          </p>
+        </footer>
+
+      </div>
+    </main>
+  );
+}
+
+export default CyberpunkOnboarding;

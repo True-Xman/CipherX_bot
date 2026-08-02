@@ -1,0 +1,30 @@
+# Project Rules: The Eye Agent
+
+## Stack
+- Node.js (v24+) + TypeScript
+- Telegram Bot Framework: Telegraf
+- Database: SQLite (via better-sqlite3)
+- i18n: 5 languages (fa, en, ar, tr, ru)
+- AI: Gemini API Integration
+
+## Guidelines
+- Write modular, clean, and strongly typed TypeScript code.
+- Prioritize security: Captcha first, then Rate Limiting, then AI processing.
+- Keep handlers isolated in `src/bot/handlers/`.
+- Maintain strict zero-budget policy using free/local tools.
+
+## Folder Structure
+- src/bot/handlers/ - Command handlers
+- src/database/ - Database client and repositories
+- src/locales/ - Language JSON files
+- src/services/ - External services (Gemini, Telegram)
+- src/middlewares/ - Auth, rate limiting, i18n
+- src/config/ - Configuration and constants
+- src/types/ - TypeScript type definitions
+- src/utils/ - Helper functions
+
+## Security Rules
+- Captcha required before any Gemini API call
+- Rate limiting: 5 messages per minute per user
+- Captcha expiry: 60 seconds
+- Max 3 failed captcha attempts → 24h ban
