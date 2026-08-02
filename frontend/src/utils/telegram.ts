@@ -1,61 +1,122 @@
-import { WebApp } from '@types/telegram-web-app';
-declare global {
-  interface Window {
-    Telegram: {
-      WebApp: WebApp;
-    };
+/// <reference types="@types/telegram-web-app" />
+
+/**
+ * Get the current Telegram user from the WebApp environment.
+ */
+export function getTelegramUser(): TelegramWebApp.User | null {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp) return null;
+  return webApp.initDataUnsafe?.user ?? null;
+}
+
+/**
+ * Get the current Telegram user ID as a string, or null if not available.
+ */
+export function getTelegramUserId(): string | null {
+  const user = getTelegramUser();
+  return user?.id?.toString() ?? null;
+}
+
+/**
+ * Check if the app is running inside Telegram WebApp context.
+ */
+export function isTelegramWebApp(): boolean {
+  return typeof window !== 'undefined' && !!window.Telegram?.WebApp;
+}
+
+/**
+ * Notify Telegram that the Mini App is ready.
+ */
+export function readyWebApp(): void {
+  if (isTelegramWebApp()) {
+    window.Telegram?.WebApp?.ready();
   }
 }
 
-export function getTelegramUserId(): number | null {
-  if (typeof window === 'undefined') return null;
-  
-  const tg = window.Telegram?.WebApp;
-  if (!tg?.initDataUnsafe?.user?.id) return null;
-  
-  return tg.initDataUnsafe.user.id;
+/**
+ * Expand the Mini App to full screen.
+ */
+export function expandWebApp(): void {
+  if (isTelegramWebApp()) {
+    window.Telegram?.WebApp?.expand();
+  }
 }
 
-export function getTelegramUser(): WebApp.User | null {
-  if (typeof window === 'undefined') return null;
-  
-  const tg = window.Telegram?.WebApp;
-  return tg?.initDataUnsafe?.user ?? null;
+/**
+ * Close the Mini App.
+ */
+export function closeWebApp(): void {
+  if (isTelegramWebApp()) {
+    window.Telegram?.WebApp?.close();
+  }
 }
 
-export function getTelegramInitData(): string | null {
-  if (typeof window === 'undefined') return null;
-  
-  const tg = window.Telegram?.WebApp;
-  return tg?.initData ?? null;
+/**
+ * Get the current theme parameters from Telegram.
+ */
+export function getThemeParams(): TelegramWebApp.ThemeParams | null {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp) return null;
+  return webApp.themeParams ?? null;
 }
 
-export function isTelegramWebApp(): boolean {
-  if (typeof window === 'undefined') return false;
-  return !!window.Telegram?.WebApp;
+/**
+ * Register a callback for theme changes.
+ * Note: This uses the WebApp's onEvent with 'themeChanged' (unofficial event).
+ */
+export function onThemeChanged(callback: (themeParams: TelegramWebApp.ThemeParams) => void): void {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp) return;
+
+  // Use type assertion to bypass missing official type
+  (webApp as any).onEvent('themeChanged', callback);
 }
 
-export function ready(): void {
-  if (typeof window === 'undefined') return;
-  window.Telegram?.WebApp?.ready();
+/**
+ * Unregister a callback for theme changes.
+ */
+export function offThemeChanged(callback: (themeParams: TelegramWebApp.ThemeParams) => void): void {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp) return;
+
+  // Use type assertion to bypass missing official type
+  (webApp as any).offEvent('themeChanged', callback);
 }
 
-export function expand(): void {
-  if (typeof window === 'undefined') return;
-  window.Telegram?.WebApp?.expand();
+/**
+ * Get the current color scheme (light/dark).
+ */
+export function getColorScheme(): 'light' | 'dark' | null {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp) return null;
+  return webApp.colorScheme ?? null;
 }
 
-export function close(): void {
-  if (typeof window === 'undefined') return;
-  window.Telegram?.WebApp?.close();
+/**
+ * Show a popup confirmation dialog.
+ */
+export function showConfirm(
+  message: string,
+  onConfirm: () => void,
+  onCancel?: () => void
+): void {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp) return;
+
+  webApp.showConfirm(message, (confirmed) => {
+    if (confirmed) {
+      onConfirm();
+    } else if (onCancel) {
+      onCancel();
+    }
+  });
 }
 
-export function onThemeChanged(callback: (themeParams: WebApp.ThemeParams) => void): void {
-  if (typeof window === 'undefined') return;
-  window.Telegram?.WebApp?.onEvent('themeChanged', callback);
-}
-
-export function offThemeChanged(callback: (themeParams: WebApp.ThemeParams) => void): void {
-  if (typeof window === 'undefined') return;
-  window.Telegram?.WebApp?.offEvent('themeChanged', callback);
+/**
+ * Show an alert popup.
+ */
+export function showAlert(message: string): void {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp) return;
+  webApp.showAlert(message);
 }
