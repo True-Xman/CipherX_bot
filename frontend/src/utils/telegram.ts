@@ -1,9 +1,58 @@
-/// <reference types="@types/telegram-web-app" />
+/**
+ * Type definitions for Telegram WebApp (inline, no external dependencies)
+ */
+interface TelegramWebAppUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  language_code?: string;
+  is_premium?: boolean;
+}
+
+interface TelegramWebAppThemeParams {
+  bg_color?: string;
+  text_color?: string;
+  hint_color?: string;
+  link_color?: string;
+  button_color?: string;
+  button_text_color?: string;
+  secondary_bg_color?: string;
+  header_bg_color?: string;
+  accent_text_color?: string;
+  section_bg_color?: string;
+  section_header_text_color?: string;
+  subtitle_text_color?: string;
+  destructive_text_color?: string;
+}
+
+interface TelegramWebApp {
+  ready(): void;
+  expand(): void;
+  close(): void;
+  initDataUnsafe?: {
+    user?: TelegramWebAppUser;
+  };
+  themeParams?: TelegramWebAppThemeParams;
+  colorScheme?: 'light' | 'dark';
+  showConfirm(message: string, callback: (confirmed: boolean) => void): void;
+  showAlert(message: string): void;
+  onEvent(event: string, callback: (...args: any[]) => void): void;
+  offEvent(event: string, callback: (...args: any[]) => void): void;
+}
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: TelegramWebApp;
+    };
+  }
+}
 
 /**
  * Get the current Telegram user from the WebApp environment.
  */
-export function getTelegramUser(): TelegramWebApp.User | null {
+export function getTelegramUser(): TelegramWebAppUser | null {
   const webApp = window.Telegram?.WebApp;
   if (!webApp) return null;
   return webApp.initDataUnsafe?.user ?? null;
@@ -54,7 +103,7 @@ export function closeWebApp(): void {
 /**
  * Get the current theme parameters from Telegram.
  */
-export function getThemeParams(): TelegramWebApp.ThemeParams | null {
+export function getThemeParams(): TelegramWebAppThemeParams | null {
   const webApp = window.Telegram?.WebApp;
   if (!webApp) return null;
   return webApp.themeParams ?? null;
@@ -62,25 +111,20 @@ export function getThemeParams(): TelegramWebApp.ThemeParams | null {
 
 /**
  * Register a callback for theme changes.
- * Note: This uses the WebApp's onEvent with 'themeChanged' (unofficial event).
  */
-export function onThemeChanged(callback: (themeParams: TelegramWebApp.ThemeParams) => void): void {
+export function onThemeChanged(callback: (themeParams: TelegramWebAppThemeParams) => void): void {
   const webApp = window.Telegram?.WebApp;
   if (!webApp) return;
-
-  // Use type assertion to bypass missing official type
-  (webApp as any).onEvent('themeChanged', callback);
+  webApp.onEvent('themeChanged', callback);
 }
 
 /**
  * Unregister a callback for theme changes.
  */
-export function offThemeChanged(callback: (themeParams: TelegramWebApp.ThemeParams) => void): void {
+export function offThemeChanged(callback: (themeParams: TelegramWebAppThemeParams) => void): void {
   const webApp = window.Telegram?.WebApp;
   if (!webApp) return;
-
-  // Use type assertion to bypass missing official type
-  (webApp as any).offEvent('themeChanged', callback);
+  webApp.offEvent('themeChanged', callback);
 }
 
 /**
