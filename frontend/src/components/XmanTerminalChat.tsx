@@ -32,8 +32,7 @@ export default function XmanTerminalChat({
   const [actionButtons, setActionButtons] = useState<ActionButton[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const resolvedUserId = getTelegramUserId() ?? getTelegramUserId();
-
+  const resolvedUserId = getTelegramUserId() ?? _userId;
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
