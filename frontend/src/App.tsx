@@ -9,9 +9,6 @@ export default function App() {
   const userId = getTelegramUserId() || "test_user_123";
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-  // ============================================================
-  // آماده‌سازی Telegram WebApp
-  // ============================================================
   useEffect(() => {
     if (WebApp && typeof WebApp.ready === 'function') {
       WebApp.ready();
@@ -19,19 +16,19 @@ export default function App() {
     }
   }, []);
 
-  // ============================================================
-  // بررسی وضعیت کپچا (با پشتیبانی از تست در مرورگر)
-  // ============================================================
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        // در محیط توسعه (مرورگر) نیازی به کپچا نیست
         if (userId === "test_user_123") {
           setIsVerified(true);
           return;
         }
 
-        const response = await fetch(`${API_URL}/api/user/status?userId=${userId}`);
+        const response = await fetch(`${API_URL}/api/user/status?userId=${userId}`, {
+          headers: {
+            'ngrok-skip-browser-warning': 'true', // <-- اضافه شد
+          },
+        });
         const data = await response.json();
         setIsVerified(data.isVerified);
       } catch (err) {
@@ -41,9 +38,6 @@ export default function App() {
     checkStatus();
   }, [userId, API_URL]);
 
-  // ============================================================
-  // نمایش خطا
-  // ============================================================
   if (error) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#0A0A0C] text-red-500 font-mono p-4 text-center">
@@ -52,9 +46,6 @@ export default function App() {
     );
   }
 
-  // ============================================================
-  // در حال بارگذاری
-  // ============================================================
   if (isVerified === null) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#0A0A0C] text-[#00FF88] font-mono animate-pulse">
@@ -63,9 +54,6 @@ export default function App() {
     );
   }
 
-  // ============================================================
-  // کاربر کپچا را حل نکرده است
-  // ============================================================
   if (!isVerified) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-[#0A0A0C] text-white font-mono p-6 text-center border-4 border-red-500/30">
@@ -77,8 +65,5 @@ export default function App() {
     );
   }
 
-  // ============================================================
-  // ورود به برنامه اصلی
-  // ============================================================
   return <XmanAppWrapper userId={userId} apiUrl={API_URL} />;
 }

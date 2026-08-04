@@ -35,7 +35,11 @@ export default function ChatHistoryDrawer({
   const fetchHistory = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/api/chat/history?userId=${userId}`);
+      const response = await fetch(`${apiUrl}/api/chat/history?userId=${userId}`, {
+        headers: {
+          'ngrok-skip-browser-warning': 'true', // <-- اضافه شد
+        },
+      });
       const data = await response.json();
       if (data.success) {
         setHistory(data.history);

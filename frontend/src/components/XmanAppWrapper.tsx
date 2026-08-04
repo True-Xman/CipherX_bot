@@ -102,7 +102,10 @@ export default function XmanAppWrapper({
 
       const response = await fetch(`${apiUrl}/api/xman/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true', // <-- اضافه شد
+        },
         body: JSON.stringify({
           userId: resolvedUserId,
           message: text.trim(),
