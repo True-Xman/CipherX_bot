@@ -1,10 +1,5 @@
 import { SupportedLanguage } from '../config/config';
 
-/**
- * Finite state machine for user verification flow.
- * UNVERIFIED -> (captcha shown) -> IN_CAPTCHA -> SELECT_LANG -> READY
- * BANNED is a terminal state until ban expiry is reached.
- */
 export enum UserState {
   UNVERIFIED = 'UNVERIFIED',
   IN_CAPTCHA = 'IN_CAPTCHA',
@@ -20,10 +15,11 @@ export interface UserRecord {
   is_verified: 0 | 1;
   state: UserState;
   failed_attempts: number;
-  banned_until: number | null; // unix ms timestamp, null if not banned
+  banned_until: number | null;
+  current_stage: number; // new field added
   learning_step: number;
   xp_points: number;
-  created_at: number; // unix ms timestamp
+  created_at: number;
   updated_at: number;
 }
 
@@ -31,12 +27,12 @@ export interface CaptchaChallenge {
   telegram_id: number;
   question: string;
   answer: number;
-  createdAt: number; // unix ms
-  expiresAt: number; // unix ms
+  createdAt: number;
+  expiresAt: number;
   attempts: number;
 }
 
 export interface RateLimitEntry {
   count: number;
-  windowStart: number; // unix ms
+  windowStart: number;
 }

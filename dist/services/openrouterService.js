@@ -20,7 +20,7 @@ async function chatWithOpenRouter(userId, message) {
                     { role: 'user', content: message }
                 ],
                 temperature: 0.7,
-                max_tokens: 500,
+                max_tokens: 300,
             }),
         });
         if (!response.ok) {

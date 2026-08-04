@@ -1,34 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getLearningState = getLearningState;
 exports.sendLearningStep = sendLearningStep;
 exports.startLearningPath = startLearningPath;
-exports.resumeLearningPath = resumeLearningPath;
-exports.handleLearningMenuAction = handleLearningMenuAction;
 exports.handleLearningCallback = handleLearningCallback;
 const telegraf_1 = require("telegraf");
 const db_1 = require("../../database/db");
 const geminiService_1 = require("../../services/geminiService");
 const openrouterService_1 = require("../../services/openrouterService");
-const locales_1 = require("../../locales");
 const types_1 = require("../../types");
 const learningSteps = [
     {
-        titleKey: 'learning_step_1_title',
-        bodyKey: 'learning_step_1_body',
-        detailPromptKey: 'learning_step_1_detail',
+        title: '🛡️ Stage 1: What is a Seed Phrase?',
+        body: 'A seed phrase is a set of 12 or 24 words that gives you full control over your crypto wallet.\n\nAnyone who knows your seed phrase can access your funds. Keep it safe and offline.',
+        detailPrompt: 'Explain what a seed phrase is, why it\'s important, and how to store it safely.',
     },
+    // مراحل بعدی را می‌توانید اضافه کنید
 ];
-function getLearningState(step) {
-    if (step <= 0)
-        return 'NOT_STARTED';
-    if (step >= learningSteps.length)
-        return 'COMPLETED';
-    return 'IN_PROGRESS';
-}
-function buildLearningKeyboard(stepIndex) {
+function buildLearningKeyboard() {
     return telegraf_1.Markup.inlineKeyboard([
-        [telegraf_1.Markup.button.callback('✅ Got it, go to next step', 'learn:next')],
+        [telegraf_1.Markup.button.callback('✅ Next', 'learn:next')],
         [telegraf_1.Markup.button.callback('❓ Explain more', 'learn:explain')],
     ]);
 }
@@ -37,63 +27,25 @@ async function sendLearningStep(ctx, stepIndex) {
     if (!user)
         return;
     if (stepIndex >= learningSteps.length) {
-        const keyboard = telegraf_1.Markup.inlineKeyboard([[telegraf_1.Markup.button.callback('🧠 Start again', 'learn:restart')]]);
-        console.log('📚 sendLearningStep completed keyboard', {
-            chatId: ctx.chat?.id,
-            hasKeyboard: !!keyboard,
-            keyboardKeys: Object.keys(keyboard),
-        });
-        await ctx.reply((0, locales_1.t)(user.language, 'learning_completed'), keyboard);
+        await ctx.reply('🎉 You have completed all stages! You are now a Web3 sovereign.', telegraf_1.Markup.inlineKeyboard([
+            [telegraf_1.Markup.button.callback('🔄 Start over', 'learn:restart')]
+        ]));
         return;
     }
     const step = learningSteps[stepIndex];
-    const title = (0, locales_1.t)(user.language, step.titleKey);
-    const body = (0, locales_1.t)(user.language, step.bodyKey);
-    const footer = (0, locales_1.t)(user.language, 'learning_step_footer');
-    const text = `${title}\n\n${body}\n\n${footer}`;
+    const text = `${step.title}\n\n${step.body}\n\nType a question or press a button below.`;
     await (0, db_1.updateUserLearningStep)(user.telegram_id, stepIndex);
-    const keyboard = buildLearningKeyboard(stepIndex);
-    console.log('📚 sendLearningStep sending keyboard', {
-        chatId: ctx.chat?.id,
-        stepIndex,
-        hasKeyboard: !!keyboard,
-        keyboardKeys: Object.keys(keyboard),
-    });
-    await ctx.reply(text, keyboard);
+    await ctx.reply(text, buildLearningKeyboard());
 }
 async function startLearningPath(ctx) {
     const user = ctx.dbUser;
     if (!user)
         return;
     if (user.state !== types_1.UserState.READY) {
-        await ctx.reply((0, locales_1.t)(user.language, 'not_verified'));
+        await ctx.reply('⚠️ Please complete the captcha first using /start.');
         return;
     }
     await sendLearningStep(ctx, user.learning_step);
-}
-async function resumeLearningPath(ctx) {
-    const user = ctx.dbUser;
-    if (!user)
-        return;
-    if (user.state !== types_1.UserState.READY) {
-        await ctx.reply((0, locales_1.t)(user.language, 'not_verified'));
-        return;
-    }
-    const stepIndex = user.learning_step >= learningSteps.length ? learningSteps.length : user.learning_step;
-    await sendLearningStep(ctx, stepIndex);
-}
-async function handleLearningMenuAction(ctx) {
-    const user = ctx.dbUser;
-    if (!user || !ctx.callbackQuery || !('data' in ctx.callbackQuery)) {
-        await ctx.answerCbQuery();
-        return;
-    }
-    await ctx.answerCbQuery('Starting Web3 Academy');
-    if (user.state !== types_1.UserState.READY) {
-        await ctx.reply((0, locales_1.t)(user.language, 'not_verified'));
-        return;
-    }
-    await startLearningPath(ctx);
 }
 async function handleLearningCallback(ctx) {
     const user = ctx.dbUser;
@@ -104,7 +56,7 @@ async function handleLearningCallback(ctx) {
     const data = ctx.callbackQuery.data;
     await ctx.answerCbQuery();
     if (user.state !== types_1.UserState.READY) {
-        await ctx.reply((0, locales_1.t)(user.language, 'not_verified'));
+        await ctx.reply('⚠️ Please complete the captcha first using /start.');
         return;
     }
     if (data === 'learn:restart') {
@@ -117,7 +69,7 @@ async function handleLearningCallback(ctx) {
         await (0, db_1.addUserXp)(user.telegram_id, 10);
         await (0, db_1.updateUserLearningStep)(user.telegram_id, nextStep);
         if (nextStep >= learningSteps.length) {
-            await ctx.reply((0, locales_1.t)(user.language, 'learning_completed'));
+            await ctx.reply('🎉 You have completed all stages!');
             return;
         }
         await sendLearningStep(ctx, nextStep);
@@ -126,8 +78,7 @@ async function handleLearningCallback(ctx) {
     if (data === 'learn:explain') {
         const stepIndex = Math.min(Math.max(user.learning_step, 0), learningSteps.length - 1);
         const step = learningSteps[stepIndex];
-        const prompt = `${(0, locales_1.t)(user.language, step.detailPromptKey)}\n\nKeep the answer concise, beginner-friendly, and mobile-friendly.`;
-        // انتخاب سرویس بر اساس AI_PROVIDER
+        const prompt = `${step.detailPrompt}\n\nKeep the answer concise, beginner-friendly, and mobile-friendly.`;
         const aiProvider = process.env.AI_PROVIDER || 'gemini';
         let result;
         if (aiProvider === 'openrouter') {
@@ -137,17 +88,10 @@ async function handleLearningCallback(ctx) {
             result = await (0, geminiService_1.askGemini)(user.telegram_id.toString(), prompt);
         }
         if (!result.success || !result.text) {
-            await ctx.reply((0, locales_1.t)(user.language, 'gemini_error'));
+            await ctx.reply('⚠️ Could not get explanation. Please try again.');
             return;
         }
-        const keyboard = buildLearningKeyboard(stepIndex);
-        console.log('📚 handleLearningCallback explain more keyboard', {
-            chatId: ctx.chat?.id,
-            stepIndex,
-            hasKeyboard: !!keyboard,
-            keyboardKeys: Object.keys(keyboard),
-        });
-        await ctx.reply(result.text, keyboard);
+        await ctx.reply(result.text, buildLearningKeyboard());
     }
 }
 //# sourceMappingURL=learningHandler.js.map

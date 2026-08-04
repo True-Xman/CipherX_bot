@@ -1,9 +1,4 @@
 import { SupportedLanguage } from '../config/config';
-/**
- * Finite state machine for user verification flow.
- * UNVERIFIED -> (captcha shown) -> IN_CAPTCHA -> SELECT_LANG -> READY
- * BANNED is a terminal state until ban expiry is reached.
- */
 export declare enum UserState {
     UNVERIFIED = "UNVERIFIED",
     IN_CAPTCHA = "IN_CAPTCHA",
@@ -19,6 +14,7 @@ export interface UserRecord {
     state: UserState;
     failed_attempts: number;
     banned_until: number | null;
+    current_stage: number;
     learning_step: number;
     xp_points: number;
     created_at: number;

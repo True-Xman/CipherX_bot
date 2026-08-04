@@ -2,10 +2,6 @@ import { getOrCreateUser } from '../../database/db';
 import { BotContext } from '../../types/context';
 import { UserState } from '../../types';
 import { sendCaptcha } from './captchaHandler';
-import { buildLanguageKeyboard } from './languageHandler';
-import { t } from '../../locales';
-import { askGemini } from '../../services/geminiService';
-import { chatWithOpenRouter } from '../../services/openrouterService';
 import { isBlank } from '../../utils/sanitize';
 import { logger } from '../../utils/logger';
 
@@ -30,8 +26,8 @@ export async function handleMessage(ctx: BotContext): Promise<void> {
   }
 
   console.log('👤 User state:', user.state);
-  console.log('👤 User language:', user.language);
 
+  // ---- اگر کاربر کپچا را حل نکرده، کپچا بفرست ----
   if (user.state !== UserState.READY) {
     switch (user.state) {
       case UserState.UNVERIFIED:
@@ -39,42 +35,20 @@ export async function handleMessage(ctx: BotContext): Promise<void> {
         console.log('🚧 handleMessage sending captcha keyboard for state', user.state);
         await sendCaptcha(ctx);
         return;
-      case UserState.SELECT_LANG:
-        {
-          const keyboard = buildLanguageKeyboard();
-          console.log('🚧 handleMessage sending language selection keyboard', {
-            chatId: ctx.chat?.id,
-            hasKeyboard: !!keyboard,
-            keyboardKeys: Object.keys(keyboard),
-          });
-          await ctx.reply(t(user.language, 'select_language_prompt'), keyboard);
-        }
-        return;
       default:
-        await ctx.reply(t(user.language, 'not_verified'));
+        await ctx.reply('⚠️ Please complete the captcha first using /start.');
         return;
     }
   }
 
+  // ---- اگر کاربر READY است، فقط راهنمایی به Mini App ----
   const text = 'text' in ctx.message! ? ctx.message.text : '';
   if (isBlank(text)) return;
 
-  await ctx.sendChatAction('typing');
-
-  // انتخاب سرویس بر اساس AI_PROVIDER
-  const aiProvider = process.env.AI_PROVIDER || 'gemini';
-  let result;
-  if (aiProvider === 'openrouter') {
-    result = await chatWithOpenRouter(user.telegram_id.toString(), text);
-  } else {
-    result = await askGemini(user.telegram_id.toString(), text);
-  }
-
-  if (!result.success || !result.text) {
-    logger.warn('AI call failed for user', { telegramId: user.telegram_id, reason: result.error });
-    await ctx.reply(t(user.language, 'gemini_error'));
-    return;
-  }
-
-  await ctx.reply(result.text);
+  // اگر کاربر در حالت READY است، به او بگویید از Mini App استفاده کند
+  await ctx.reply(
+    '🤖 All conversations with Xman now happen inside the Mini App.\n\n' +
+    '📱 Please open the Mini App using the Menu button below to continue your Web3 training.\n\n' +
+    '🔐 If you haven\'t solved the captcha yet, please use /start first.'
+  );
 }

@@ -2,7 +2,6 @@ import { initDb } from './database/db';
 import { logger } from './utils/logger';
 import { handleMessage } from './bot/handlers/messageHandler';
 import { handleCaptchaAnswer } from './bot/handlers/captchaHandler';
-import { handleLanguageSelect, handleMainMenuSelection } from './bot/handlers/languageHandler';
 import { getOrCreateUser } from './database/db';
 import { BotContext } from './types/context';
 import * as fs from 'fs';
@@ -84,7 +83,6 @@ async function sendMessage(chatId: number, text: string, keyboard?: any) {
       console.log('📌 sendMessage final payload reply_markup:', JSON.stringify(payload.reply_markup));
     }
 
-    // Debug helper: send a hardcoded inline keyboard when explicitly enabled.
     if (!payload.reply_markup && process.env.SEND_MESSAGE_HARD_CODED_BUTTON === '1') {
       payload.reply_markup = {
         inline_keyboard: [[{ text: 'Debug Button', callback_data: 'debug:test' }]],
@@ -166,8 +164,6 @@ async function getUpdates() {
           console.log('🔍 Callback data normalized (json):', JSON.stringify(normalizedCbData));
           console.log('🔎 startsWith checks:', {
             captcha: typeof normalizedCbData === 'string' && normalizedCbData.startsWith('captcha:'),
-            lang: typeof normalizedCbData === 'string' && normalizedCbData.startsWith('lang:'),
-            menu: typeof normalizedCbData === 'string' && normalizedCbData.startsWith('menu:'),
             length: typeof normalizedCbData === 'string' ? normalizedCbData.length : null,
           });
 
@@ -217,19 +213,6 @@ async function getUpdates() {
               await handleCaptchaAnswer(ctx);
             } catch (err) {
               console.error('❌ handleCaptchaAnswer error:', err);
-            }
-          } else if (cb.data && cb.data.startsWith('lang:')) {
-            try {
-              await handleLanguageSelect(ctx);
-            } catch (err) {
-              console.error('❌ handleLanguageSelect error:', err);
-            }
-          } else if (cb.data && cb.data.startsWith('menu:')) {
-            console.log('🧭 Main menu callback received:', cb.data);
-            try {
-              await handleMainMenuSelection(ctx);
-            } catch (err) {
-              console.error('❌ handleMainMenuSelection error:', err);
             }
           } else {
             console.log('⚠️ Unknown callback data:', cb.data);
@@ -286,7 +269,7 @@ async function main() {
   // مسیرهای API Xman
   app.use(xmanChatRoutes);
 
-  // Health check برای اطمینان از اجرای سرور
+  // Health check
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });

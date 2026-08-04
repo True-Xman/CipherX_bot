@@ -39,41 +39,58 @@ export function initDb(): Promise<void> {
         banned_until    INTEGER,
         wallet_address  TEXT,
         current_stage   INTEGER DEFAULT 1,
+        learning_step   INTEGER DEFAULT 0,
+        xp_points       INTEGER DEFAULT 0,
         created_at      INTEGER NOT NULL,
         updated_at      INTEGER NOT NULL
       );
+      
       CREATE INDEX IF NOT EXISTS idx_users_state ON users(state);
+
+      -- جدول جدید برای تاریخچه چت
+      CREATE TABLE IF NOT EXISTS chat_history (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        telegram_id     INTEGER NOT NULL,
+        role            TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system')),
+        content         TEXT NOT NULL,
+        stage           INTEGER DEFAULT 1,
+        created_at      INTEGER NOT NULL,
+        FOREIGN KEY (telegram_id) REFERENCES users(telegram_id) ON DELETE CASCADE
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_chat_history_telegram_id ON chat_history(telegram_id);
+      CREATE INDEX IF NOT EXISTS idx_chat_history_created_at ON chat_history(created_at);
     `;
+    
     db.exec(schema, (err) => {
       if (err) {
         logger.error('Failed to initialize schema', { error: err.message });
         return reject(err);
       }
       logger.info('Database schema ready');
-
-      // بررسی ستون‌های موجود با استفاده از PRAGMA table_info
+      
+      // بررسی و اضافه کردن ستون‌های جدید (اگر قبلاً وجود نداشتند)
       db.all(`PRAGMA table_info('users')`, (err, columns: Array<{ name: string }>) => {
         if (err) {
           logger.error('Failed to get table info', { error: err.message });
           return reject(err);
         }
-
+        
         const columnNames = columns.map(col => col.name);
         const alterQueries: string[] = [];
-
-        if (!columnNames.includes('xp')) {
-          alterQueries.push(`ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 0`);
+        
+        if (!columnNames.includes('xp_points')) {
+          alterQueries.push(`ALTER TABLE users ADD COLUMN xp_points INTEGER DEFAULT 0`);
         }
         if (!columnNames.includes('learning_step')) {
-          alterQueries.push(`ALTER TABLE users ADD COLUMN learning_step TEXT DEFAULT 'start'`);
+          alterQueries.push(`ALTER TABLE users ADD COLUMN learning_step INTEGER DEFAULT 0`);
         }
-
+        
         if (alterQueries.length === 0) {
           logger.info('No new columns to add');
           return resolve();
         }
-
-        // اجرای دستورات ALTER TABLE به صورت سری
+        
         let completed = 0;
         alterQueries.forEach((query) => {
           db.run(query, (err) => {
@@ -250,7 +267,7 @@ export function updateCurrentStage(telegramId: string | number, stage: number): 
 export function addUserXp(telegramId: number, xpAmount: number): Promise<void> {
   return new Promise((resolve, reject) => {
     db.run(
-      `UPDATE users SET xp = COALESCE(xp, 0) + ? WHERE telegram_id = ?`,
+      `UPDATE users SET xp_points = COALESCE(xp_points, 0) + ? WHERE telegram_id = ?`,
       [xpAmount, telegramId],
       (err) => (err ? reject(err) : resolve())
     );
@@ -264,6 +281,63 @@ export function updateUserLearningStep(telegramId: number, step: string | number
       `UPDATE users SET learning_step = ? WHERE telegram_id = ?`,
       [stepStr, telegramId],
       (err) => (err ? reject(err) : resolve())
+    );
+  });
+}
+
+// ============================================================
+// توابع مربوط به تاریخچه چت
+// ============================================================
+
+/**
+ * ذخیره یک پیام در تاریخچه چت
+ */
+export function saveChatMessage(
+  telegramId: number,
+  role: 'user' | 'assistant' | 'system',
+  content: string,
+  stage: number = 1
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const now = Date.now();
+    db.run(
+      `INSERT INTO chat_history (telegram_id, role, content, stage, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [telegramId, role, content, stage, now],
+      (err) => {
+        if (err) {
+          logger.error('Failed to save chat message', { error: err.message, telegramId });
+          return reject(err);
+        }
+        resolve();
+      }
+    );
+  });
+}
+
+/**
+ * دریافت آخرین N پیام تاریخچه چت برای یک کاربر
+ */
+export function getChatHistory(
+  telegramId: number,
+  limit: number = 15
+): Promise<{ role: string; content: string; created_at: number; stage: number }[]> {
+  return new Promise((resolve, reject) => {
+    db.all(
+      `SELECT role, content, created_at, stage
+       FROM chat_history
+       WHERE telegram_id = ?
+       ORDER BY created_at DESC
+       LIMIT ?`,
+      [telegramId, limit],
+      (err, rows: any[]) => {
+        if (err) {
+          logger.error('Failed to get chat history', { error: err.message, telegramId });
+          return reject(err);
+        }
+        // برگرداندن به ترتیب صعودی (قدیمی‌ترین اول)
+        resolve(rows.reverse());
+      }
     );
   });
 }

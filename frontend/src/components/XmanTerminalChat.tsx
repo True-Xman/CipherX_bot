@@ -15,17 +15,27 @@ interface ActionButton {
 }
 
 interface XmanTerminalChatProps {
-  _userId: string; // تغییر نام به _userId برای جلوگیری از خطای unused
+  _userId: string;
+  apiUrl?: string;
   initialMessages?: Message[];
   onStageChange?: (stage: number) => void;
 }
 
 export default function XmanTerminalChat({
   _userId,
+  apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001',
   initialMessages = [],
   onStageChange,
 }: XmanTerminalChatProps) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content: "Welcome, agent. I am Xman. I have traveled from a future where digital wealth was lost due to weak security. My purpose is to guide you toward true Self-Custody.\n\nAre you ready to begin Stage 1?",
+      timestamp: new Date(),
+    },
+    ...initialMessages,
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStage, setCurrentStage] = useState(1);
@@ -33,6 +43,7 @@ export default function XmanTerminalChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolvedUserId = getTelegramUserId() ?? _userId;
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -64,7 +75,7 @@ export default function XmanTerminalChat({
         content: m.content,
       }));
 
-      const response = await fetch('/api/xman/chat', {
+      const response = await fetch(`${apiUrl}/api/xman/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -91,9 +102,27 @@ export default function XmanTerminalChat({
         setActionButtons(buttons);
       } else {
         console.error('Xman API error:', data.error);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `error-${Date.now()}`,
+            role: 'assistant',
+            content: "⚠️ Neural link to Xman disconnected. Please try again.",
+            timestamp: new Date(),
+          },
+        ]);
       }
     } catch (error) {
       console.error('Send message error:', error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `error-${Date.now()}`,
+          role: 'assistant',
+          content: "⚠️ Neural link to Xman disconnected. Please check your connection.",
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +151,7 @@ export default function XmanTerminalChat({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0A0A0C] text-gray-200 font-mono">
+    <div className="flex flex-col h-[100dvh] w-full max-w-md mx-auto bg-[#0A0A0C] text-gray-200 font-mono sm:border-x sm:border-[#00FF88]/20 shadow-2xl relative">
       <header className="flex items-center justify-between border-b border-primary/30 px-5 py-4">
         <div className="flex items-center gap-3">
           <span className="relative flex h-3 w-3">
@@ -167,9 +196,20 @@ export default function XmanTerminalChat({
                   : 'bg-[#12131A] border border-gray-800 text-gray-300'
               }`}
             >
+              {msg.role === 'assistant' && messages.length > 0 && (
+                <span className="block text-xs text-primary/70 mb-1 font-bold">XMAN</span>
+              )}
               <p className="text-sm leading-relaxed whitespace-pre-wrap">
                 {msg.content}
               </p>
+              {msg.role === 'assistant' && messages.length === 1 && (
+                <button
+                  onClick={() => sendMessage("Yes, I am ready to begin.")}
+                  className="mt-4 px-5 py-2 border border-primary text-primary hover:bg-primary hover:text-black transition-all w-full uppercase text-xs tracking-wider font-bold rounded"
+                >
+                  I am ready
+                </button>
+              )}
             </div>
             <span className="text-[9px] text-gray-500 mt-1 px-1">
               {msg.timestamp.toLocaleTimeString()}

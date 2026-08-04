@@ -19,7 +19,7 @@ export async function chatWithOpenRouter(userId: string, message: string): Promi
           { role: 'user', content: message }
         ],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 300,
       }),
     });
 
