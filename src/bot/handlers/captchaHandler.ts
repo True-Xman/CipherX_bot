@@ -8,7 +8,7 @@ import {
   buildAnswerOptions,
   incrementAttempt,
 } from '../../services/captchaService';
-import { updateUserState, incrementFailedAttempts, resetFailedAttempts, banUser } from '../../database/db';
+import { updateUserState, setUserVerified, incrementFailedAttempts, resetFailedAttempts, banUser } from '../../database/db';
 import { UserState } from '../../types';
 import { config } from '../../config/config';
 import { logger } from '../../utils/logger';
@@ -62,6 +62,7 @@ export async function handleCaptchaAnswer(ctx: BotContext): Promise<void> {
     clearChallenge(user.telegram_id);
     await resetFailedAttempts(user.telegram_id);
     await updateUserState(user.telegram_id, UserState.READY);
+    await setUserVerified(user.telegram_id, true);
     await ctx.reply('✅ Captcha solved! You can now use the Mini App.');
     return;
   }
