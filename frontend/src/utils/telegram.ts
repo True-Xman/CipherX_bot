@@ -30,6 +30,7 @@ interface TelegramWebApp {
   ready(): void;
   expand(): void;
   close(): void;
+  initData?: string;
   initDataUnsafe?: {
     user?: TelegramWebAppUser;
   };
@@ -47,6 +48,14 @@ declare global {
       WebApp?: TelegramWebApp;
     };
   }
+}
+
+/**
+ * Get the raw initData string from Telegram WebApp.
+ */
+export function getTelegramInitData(): string {
+  if (typeof window === 'undefined') return '';
+  return window.Telegram?.WebApp?.initData || '';
 }
 
 /**

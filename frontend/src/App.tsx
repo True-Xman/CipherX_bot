@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import XmanAppWrapper from './components/XmanAppWrapper';
-import { getTelegramUserId } from './utils/telegram';
+import { getTelegramInitData } from './utils/telegram';
 import WebApp from '@twa-dev/sdk';
 
 export default function App() {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const userId = getTelegramUserId() || "test_user_123";
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   useEffect(() => {
@@ -19,16 +18,26 @@ export default function App() {
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        if (userId === "test_user_123") {
-          setIsVerified(true);
+        const initData = getTelegramInitData();
+        if (!initData) {
+          setError("Telegram WebApp context required. Please open inside Telegram.");
+          setIsVerified(false);
           return;
         }
 
-        const response = await fetch(`${API_URL}/api/user/status?userId=${userId}`, {
+        const response = await fetch(`${API_URL}/api/user/status`, {
           headers: {
-            'ngrok-skip-browser-warning': 'true', // <-- اضافه شد
+            'Authorization': `Bearer ${initData}`,
+            'ngrok-skip-browser-warning': 'true',
           },
         });
+
+        if (response.status === 401) {
+          setError("Unauthorized Telegram session. Please reopen the Mini App from Telegram.");
+          setIsVerified(false);
+          return;
+        }
+
         const data = await response.json();
         setIsVerified(data.isVerified);
       } catch (err) {
@@ -36,7 +45,7 @@ export default function App() {
       }
     };
     checkStatus();
-  }, [userId, API_URL]);
+  }, [API_URL]);
 
   if (error) {
     return (
@@ -65,5 +74,5 @@ export default function App() {
     );
   }
 
-  return <XmanAppWrapper userId={userId} apiUrl={API_URL} />;
+  return <XmanAppWrapper apiUrl={API_URL} />;
 }

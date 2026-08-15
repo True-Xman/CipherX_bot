@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Terminal, ShieldCheck } from 'lucide-react';
-import { getTelegramUserId } from '../utils/telegram';
+import { getTelegramInitData } from '../utils/telegram';
 
 interface Message {
   id: string;
@@ -15,14 +15,12 @@ interface ActionButton {
 }
 
 interface XmanTerminalChatProps {
-  _userId: string;
   apiUrl?: string;
   initialMessages?: Message[];
   onStageChange?: (stage: number) => void;
 }
 
 export default function XmanTerminalChat({
-  _userId,
   apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001',
   initialMessages = [],
   onStageChange,
@@ -41,8 +39,6 @@ export default function XmanTerminalChat({
   const [currentStage, setCurrentStage] = useState(1);
   const [actionButtons, setActionButtons] = useState<ActionButton[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const resolvedUserId = getTelegramUserId() ?? _userId;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -75,11 +71,15 @@ export default function XmanTerminalChat({
         content: m.content,
       }));
 
+      const initData = getTelegramInitData();
+
       const response = await fetch(`${apiUrl}/api/xman/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${initData}`,
+        },
         body: JSON.stringify({
-          userId: resolvedUserId,
           message: text.trim(),
           history,
         }),

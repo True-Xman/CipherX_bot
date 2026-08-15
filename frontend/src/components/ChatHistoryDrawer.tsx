@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, History } from 'lucide-react';
+import { getTelegramInitData } from '../utils/telegram';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -11,14 +12,12 @@ interface ChatMessage {
 }
 
 interface ChatHistoryDrawerProps {
-  userId: string;
   apiUrl: string;
   isOpen: boolean;
   onToggle: () => void;
 }
 
 export default function ChatHistoryDrawer({
-  userId,
   apiUrl,
   isOpen,
   onToggle,
@@ -35,9 +34,11 @@ export default function ChatHistoryDrawer({
   const fetchHistory = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/api/chat/history?userId=${userId}`, {
+      const initData = getTelegramInitData();
+      const response = await fetch(`${apiUrl}/api/chat/history`, {
         headers: {
-          'ngrok-skip-browser-warning': 'true', // <-- اضافه شد
+          'Authorization': `Bearer ${initData}`,
+          'ngrok-skip-browser-warning': 'true',
         },
       });
       const data = await response.json();
