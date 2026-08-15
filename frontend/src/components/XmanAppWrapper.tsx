@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Terminal, ShieldCheck } from 'lucide-react';
-import { getTelegramUserId } from '../utils/telegram';
+import { getTelegramInitData } from '../utils/telegram';
 import ChatHistoryDrawer from './ChatHistoryDrawer';
 
 interface Message {
@@ -45,14 +45,12 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
 ];
 
 interface XmanAppWrapperProps {
-  userId: string;
   apiUrl: string;
   initialMessages?: Message[];
   onStageChange?: (stage: number) => void;
 }
 
 export default function XmanAppWrapper({
-  userId,
   apiUrl,
   initialMessages = [],
   onStageChange,
@@ -66,8 +64,6 @@ export default function XmanAppWrapper({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [avatarError, setAvatarError] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
-  const resolvedUserId = getTelegramUserId() ?? userId;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -100,14 +96,16 @@ export default function XmanAppWrapper({
         content: m.content,
       }));
 
+      const initData = getTelegramInitData();
+
       const response = await fetch(`${apiUrl}/api/xman/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true', // <-- اضافه شد
+          'Authorization': `Bearer ${initData}`,
+          'ngrok-skip-browser-warning': 'true',
         },
         body: JSON.stringify({
-          userId: resolvedUserId,
           message: text.trim(),
           history,
         }),
@@ -375,7 +373,6 @@ export default function XmanAppWrapper({
 
       {/* Chat History Drawer */}
       <ChatHistoryDrawer
-        userId={resolvedUserId}
         apiUrl={apiUrl}
         isOpen={isDrawerOpen}
         onToggle={() => setIsDrawerOpen(!isDrawerOpen)}

@@ -1,7 +1,8 @@
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import { config } from '../config/config';
 import { getCurrentStage, updateCurrentStage, getUser, saveChatMessage, getChatHistory } from '../database/db';
 import { buildXmanSystemPrompt } from '../prompts/xmanPrompt';
+import { requireTelegramAuth, AuthenticatedRequest } from '../middlewares/telegramAuthMiddleware';
 
 const router = express.Router();
 
@@ -12,20 +13,14 @@ const AI_MODEL = process.env.AI_MODEL || config.openrouter?.model || 'openrouter
 // فیلتر امنیتی برای جلوگیری از وارد کردن seed phrase
 const seedPhraseRegex = /\b([a-z]{3,12}\s+){11,23}[a-z]{3,12}\b/i;
 
+// Apply authentication middleware to all routes in this router
+router.use(requireTelegramAuth);
+
 // ======================================================
 // 🔐 بررسی وضعیت کپچا
 // ======================================================
-router.get('/api/user/status', async (req: Request, res: Response) => {
-  const { userId } = req.query;
-
-  if (!userId) {
-    return res.status(400).json({ error: "User ID is required" });
-  }
-
-  const userIdNum = Number(userId);
-  if (isNaN(userIdNum)) {
-    return res.status(400).json({ error: "Invalid user ID" });
-  }
+router.get('/api/user/status', async (req: AuthenticatedRequest, res: Response) => {
+  const userIdNum = req.telegramUser!.id;
 
   try {
     const user = await getUser(userIdNum);
@@ -43,17 +38,8 @@ router.get('/api/user/status', async (req: Request, res: Response) => {
 // ======================================================
 // 📜 دریافت تاریخچه چت (آخرین ۱۵ پیام)
 // ======================================================
-router.get('/api/chat/history', async (req: Request, res: Response) => {
-  const { userId } = req.query;
-
-  if (!userId) {
-    return res.status(400).json({ error: "User ID is required" });
-  }
-
-  const userIdNum = Number(userId);
-  if (isNaN(userIdNum)) {
-    return res.status(400).json({ error: "Invalid user ID" });
-  }
+router.get('/api/chat/history', async (req: AuthenticatedRequest, res: Response) => {
+  const userIdNum = req.telegramUser!.id;
 
   try {
     const history = await getChatHistory(userIdNum, 15);
@@ -67,19 +53,21 @@ router.get('/api/chat/history', async (req: Request, res: Response) => {
 // ======================================================
 // 💬 پردازش پیام‌های چت Xman (با OpenRouter)
 // ======================================================
-router.post('/api/xman/chat', async (req: Request, res: Response) => {
-  console.log('📨 Xman chat request received:', req.body);
+router.post('/api/xman/chat', async (req: AuthenticatedRequest, res: Response) => {
+  console.log('📨 Xman chat request received from Telegram user:', req.telegramUser!.id);
 
   try {
-    const { userId, message, history = [] }: {
-      userId: string;
+    const { message, history = [] }: {
       message: string;
       history?: { role: 'user' | 'assistant'; content: string }[]
     } = req.body;
 
-    if (!userId || !message) {
-      return res.status(400).json({ success: false, error: 'userId and message are required' });
+    if (!message) {
+      return res.status(400).json({ success: false, error: 'message is required' });
     }
+
+    const userIdNum = req.telegramUser!.id;
+    const userIdStr = String(userIdNum);
 
     // 1. فیلتر امنیتی ورودی (جلوگیری از وارد کردن کلمات کلیدی)
     if (seedPhraseRegex.test(message)) {
@@ -91,13 +79,7 @@ router.post('/api/xman/chat', async (req: Request, res: Response) => {
     }
 
     // 2. دریافت وضعیت کاربر از دیتابیس
-    const userIdNum = Number(userId);
-    if (isNaN(userIdNum)) {
-      return res.status(400).json({ success: false, error: 'Invalid userId' });
-    }
-
-    // استفاده از getCurrentStage به‌جای دسترسی مستقیم به user.current_stage
-    const currentStage = await getCurrentStage(userId);
+    const currentStage = await getCurrentStage(userIdStr);
 
     // 3. ساخت پرامپت اختصاصی مرحله
     const systemPrompt = buildXmanSystemPrompt(currentStage);
@@ -155,7 +137,7 @@ router.post('/api/xman/chat', async (req: Request, res: Response) => {
 
     // 7. بروزرسانی مرحله در دیتابیس
     if (newStage !== currentStage) {
-      await updateCurrentStage(userId, newStage);
+      await updateCurrentStage(userIdStr, newStage);
     }
 
     // ======================================================
